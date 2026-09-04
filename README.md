@@ -101,8 +101,9 @@ The bootstrap script performs the following actions:
 2. Runs an NVIDIA CUDA test container and prints the detected GPU.
 3. Creates `~/sleap-data` and a mode-`600` `.env` with random VNC and Jupyter
    credentials.
-4. Builds the locked SLEAP image, starts the services, reports the actual
-   localhost ports, and runs the GPU/package/data smoke test.
+4. Pulls `yzy0000/sleap-gpu:1.6.5-cu118` from Docker Hub, starts it with
+   `--no-build`, reports the actual localhost ports, and runs the
+   GPU/package/data smoke test.
 
 Use a different WSL data directory when needed:
 
@@ -159,9 +160,34 @@ Use the wrapper rather than calling `docker compose up` directly:
 ./scripts/start.sh
 ```
 
-The script validates configuration and data permissions, builds the image,
-waits for the health check, asks Docker which ports were actually published,
-and prints English access instructions:
+To use the published Docker Hub image instead of building locally, set these
+values in `.env`:
+
+```dotenv
+IMAGE_NAME=yzy0000/sleap-gpu
+IMAGE_TAG=1.6.5-cu118
+SLEAP_IMAGE_MODE=pull
+```
+
+Then run the same wrapper:
+
+```bash
+./scripts/start.sh
+```
+
+In `pull` mode the wrapper runs `docker compose pull` and starts with
+`--no-build`, so the local Dockerfile is not built. The image can also be
+preloaded explicitly and inspected in Docker Desktop:
+
+```bash
+docker pull yzy0000/sleap-gpu:1.6.5-cu118
+docker image inspect yzy0000/sleap-gpu:1.6.5-cu118 \
+  --format 'ID={{.Id}} OS={{.Os}} ARCH={{.Architecture}}'
+```
+
+The script validates configuration and data permissions, builds or pulls the
+image according to `SLEAP_IMAGE_MODE`, waits for the health check, asks Docker
+which ports were actually published, and prints English access instructions:
 
 ```text
 SLEAP container started successfully.

@@ -43,9 +43,23 @@ if (( last_port > preferred_port )); then
 fi
 
 compose=(docker compose --env-file "${env_file}" "${compose_files[@]}")
+image_mode="${SLEAP_IMAGE_MODE:-build}"
+up_image_options=()
 
-echo "Building the SLEAP image..."
-"${compose[@]}" build sleap
+case "${image_mode}" in
+    build)
+        echo "Building the SLEAP image from source..."
+        "${compose[@]}" build sleap
+        ;;
+    pull)
+        echo "Pulling the prebuilt SLEAP image..."
+        "${compose[@]}" pull sleap
+        up_image_options=(--no-build)
+        ;;
+    *)
+        fail "SLEAP_IMAGE_MODE must be either 'build' or 'pull', not: ${image_mode}"
+        ;;
+esac
 
 run_up() {
     local published_port="$1"
@@ -54,7 +68,7 @@ run_up() {
 
     set +e
     JUPYTER_PUBLISHED_PORT="${published_port}" \
-        "${compose[@]}" up -d --wait 2>&1 | tee "${attempt_log}"
+        "${compose[@]}" up -d --wait "${up_image_options[@]}" 2>&1 | tee "${attempt_log}"
     up_status=${PIPESTATUS[0]}
     set -e
 

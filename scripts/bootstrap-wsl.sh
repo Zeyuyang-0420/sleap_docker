@@ -108,8 +108,9 @@ GPU_COUNT=1
 USER_UID=${user_uid}
 USER_GID=${user_gid}
 
-IMAGE_NAME=sleap-gpu
+IMAGE_NAME=yzy0000/sleap-gpu
 IMAGE_TAG=1.6.5-cu118
+SLEAP_IMAGE_MODE=pull
 COMPOSE_PROJECT_NAME=sleap
 UV_VERSION=0.8.15
 EOF
@@ -117,7 +118,7 @@ EOF
     echo "Created configuration with generated credentials: ${env_file}"
 fi
 
-echo "Building and starting SLEAP. The first build can take a long time..."
+echo "Pulling and starting the prebuilt SLEAP image. The first download can take a long time..."
 ENV_FILE="${env_file}" "${project_dir}/scripts/start.sh"
 
 if (( run_smoke_test == 1 )); then
