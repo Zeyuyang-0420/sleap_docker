@@ -1,0 +1,33 @@
+[project]
+name = "sleap-container-environment"
+version = "1.0.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "h5py",
+    "ipywidgets",
+    "jupyterlab",
+    "openpyxl",
+    "plotly",
+    "pyarrow",
+    "sleap[nn]==1.6.5",
+    "statsmodels",
+    "tables",
+    "torch",
+    "torchvision>=0.20.0",
+    "tqdm",
+    "xlsxwriter",
+]
+
+[tool.uv]
+package = false
+
+# Route both packages explicitly to PyTorch's CUDA 11.8 index. This avoids uv
+# resolving a CPU wheel, or sleap-nn's newer default CUDA backend, at build time.
+[tool.uv.sources]
+torch = { index = "pytorch-cu118" }
+torchvision = { index = "pytorch-cu118" }
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true

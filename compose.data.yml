@@ -1,0 +1,9 @@
+services:
+  sleap:
+    volumes:
+      - type: bind
+        source: ${DATA_DIR:?Set DATA_DIR in .env}
+        target: /data
+        bind:
+          create_host_path: false
+

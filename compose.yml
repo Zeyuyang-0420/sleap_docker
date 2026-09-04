@@ -1,0 +1,60 @@
+name: ${COMPOSE_PROJECT_NAME:-sleap}
+
+services:
+  sleap:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UV_VERSION: ${UV_VERSION:-0.8.15}
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+    image: ${IMAGE_NAME:-sleap-gpu}:${IMAGE_TAG:-1.6.5-cu118}
+    restart: unless-stopped
+
+    environment:
+      DISPLAY_WIDTH: "${DISPLAY_WIDTH:-1920}"
+      DISPLAY_HEIGHT: "${DISPLAY_HEIGHT:-1080}"
+      XDG_RUNTIME_DIR: /tmp/runtime-sleap
+      VNC_PASSWORD: "${VNC_PASSWORD:?Set VNC_PASSWORD in .env}"
+      JUPYTER_TOKEN: "${JUPYTER_TOKEN:?Set JUPYTER_TOKEN in .env}"
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+
+    ports:
+      - name: sleap-gui
+        target: 6080
+        host_ip: 127.0.0.1
+        published: "${NOVNC_PORT:-6080}"
+        protocol: tcp
+      - name: jupyterlab
+        target: 8888
+        host_ip: 127.0.0.1
+        # start.sh first supplies the preferred port (8899). It switches this
+        # to the fallback range only after Docker reports a bind conflict.
+        published: "${JUPYTER_PUBLISHED_PORT:-8899}"
+        protocol: tcp
+
+    volumes:
+      - type: volume
+        source: sleap-home
+        target: /home/sleap
+
+    shm_size: "${SHM_SIZE:-8gb}"
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${GPU_COUNT:-1}
+              capabilities: [gpu]
+
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  sleap-home:
