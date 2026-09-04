@@ -24,6 +24,7 @@ sleap_docker/
 ├── config/                 # Supervisor and Jupyter configuration
 └── scripts/
     ├── start.sh            # Recommended start command and port reporting
+    ├── bootstrap-wsl.sh    # Fresh WSL2 validation, configuration and startup
     └── smoke-test.sh       # Package, data and GPU verification
 ```
 
@@ -63,6 +64,63 @@ docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 For best bind-mount performance, keep active datasets in the WSL Linux
 filesystem, for example `/home/your-user/sleap-data`. `/mnt/c/...` is supported
 but is normally slower for many small files.
+
+## End-to-end deployment on a new WSL2 machine
+
+Run the following in an **Administrator PowerShell** on Windows:
+
+```powershell
+wsl --install --distribution Ubuntu
+wsl --update
+winget install --exact --id Docker.DockerDesktop
+```
+
+Restart Windows if requested, open Ubuntu once to create the Linux user, then
+start Docker Desktop. In Docker Desktop, enable **Use the WSL 2 based engine**
+and enable the Ubuntu distribution under **Settings > Resources > WSL
+Integration**. Keep Docker Desktop in Linux-container mode. Install a current
+Windows NVIDIA driver, but do not install a second Linux display driver inside
+Ubuntu.
+
+Open the Ubuntu terminal and run:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y git openssl ca-certificates
+
+cd ~
+git clone https://github.com/Zeyuyang-0420/sleap_docker.git
+cd sleap_docker
+./scripts/bootstrap-wsl.sh
+```
+
+The bootstrap script performs the following actions:
+
+1. Confirms that it is running inside WSL2 and that Docker Desktop integration
+   and Docker Compose are available.
+2. Runs an NVIDIA CUDA test container and prints the detected GPU.
+3. Creates `~/sleap-data` and a mode-`600` `.env` with random VNC and Jupyter
+   credentials.
+4. Builds the locked SLEAP image, starts the services, reports the actual
+   localhost ports, and runs the GPU/package/data smoke test.
+
+Use a different WSL data directory when needed:
+
+```bash
+./scripts/bootstrap-wsl.sh --data-dir /home/$USER/my-sleap-data
+```
+
+If `.env` already exists, the script preserves it and uses its existing data
+path and credentials. Display the generated credentials locally with:
+
+```bash
+sed -n -e '/^VNC_PASSWORD=/p' -e '/^JUPYTER_TOKEN=/p' .env
+```
+
+Open the exact URLs printed by the script in the Windows browser. Normally
+they are `http://127.0.0.1:6080/vnc.html` for SLEAP and
+`http://127.0.0.1:8899/lab` for JupyterLab. The Jupyter port can be different
+when 8899 is already occupied.
 
 ## Configure
 
